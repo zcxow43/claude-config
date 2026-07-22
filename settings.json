@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "Agent",
+      "WebFetch",
+      "mcp__*",
+      "Skill",
+      "Artifact",
+      "NotebookEdit",
+      "TaskCreate",
+      "TaskUpdate",
+      "Edit(.claude/settings.json)",
+      "Write(.claude/settings.json)",
+      "Edit(.claude/settings.local.json)",
+      "Write(.claude/settings.local.json)"
+    ]
+  }
+}
