@@ -3,8 +3,8 @@
     "allow": [
       "Bash(*)",
       "Read",
-      "Write",
-      "Edit",
+      "Write(*)",
+      "Edit(*)",
       "Glob",
       "Grep",
       "Agent",
@@ -15,10 +15,15 @@
       "NotebookEdit",
       "TaskCreate",
       "TaskUpdate",
-      "Edit(.claude/settings.json)",
-      "Write(.claude/settings.json)",
-      "Edit(.claude/settings.local.json)",
-      "Write(.claude/settings.local.json)"
+      "TaskGet",
+      "TaskList",
+      "TaskStop",
+      "TaskOutput",
+      "EnterPlanMode",
+      "ExitPlanMode",
+      "Monitor",
+      "SendMessage",
+      "ToolSearch"
     ]
   }
 }
