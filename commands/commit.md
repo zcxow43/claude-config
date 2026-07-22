@@ -1,13 +1,13 @@
-Commit and push changes. Requires exactly one argument: `sdd` or `claude`.
+Commit and push changes. Requires exactly one argument: `wdd` or `claude`.
 
 ## Argument Validation
 
 The user MUST provide `$ARGUMENTS`. Check the value:
 
-- If `$ARGUMENTS` is empty or blank: **print error** `Error: missing argument. Usage: /commit sdd or /commit claude` and **STOP**.
-- If `$ARGUMENTS` is not exactly `sdd` or `claude`: **print error** `Error: invalid argument "$ARGUMENTS". Usage: /commit sdd or /commit claude` and **STOP**.
+- If `$ARGUMENTS` is empty or blank: **print error** `Error: missing argument. Usage: /commit wdd or /commit claude` and **STOP**.
+- If `$ARGUMENTS` is not exactly `wdd` or `claude`: **print error** `Error: invalid argument "$ARGUMENTS". Usage: /commit wdd or /commit claude` and **STOP**.
 
-## When argument is `sdd`
+## When argument is `wdd`
 
 Commit and push the **main project repo** (the project root).
 
