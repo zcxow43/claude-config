@@ -98,18 +98,21 @@ The generated infra spec should contain:
 - Named volume for persistence
 - Any init scripts directory mount
 
-### Step 4: Verify database connectivity
+### Step 4: Verify service connectivity (DB, Redis, and any other detected service)
 
-After infra specs are identified:
+This pre-flight runs **before any spec (Infra/DBA/Backend/Frontend) is executed** — connectivity must be proven first, ahead of all other spec work.
 
-1. Read `env.md` — extract Database Host, Port, Database name, Username, Password
-2. If `env.md` is missing or database fields are incomplete: **STOP all execution** and report the error
-3. Test database connectivity: `mysql -h <Host> -P <Port> -u <Username> -p<Password> -e "SELECT 1;" 2>&1`
-4. If connection fails: **STOP all execution** and report: "Database is not reachable. Start it with `docker compose up -d` and retry."
+1. Read `env.md` — extract connection details for **every** detected service that needs a live connection (e.g. Database Host/Port/Database/Username/Password, Redis Host/Port/Password)
+2. If `env.md` is missing or a required service's fields are incomplete: **STOP all execution** and report the error
+3. Test connectivity for each detected service using its env.md values:
+   - MySQL/database: `mysql -h <Host> -P <Port> -u <Username> -p<Password> -e "SELECT 1;" 2>&1`
+   - Redis: `redis-cli -h <Host> -p <Port> -a <Password> PING 2>&1`
+   - Other services (MongoDB, RabbitMQ, Kafka, Elasticsearch, MinIO, etc.): use the equivalent lightweight CLI/ping check if available
+4. If **any** connection fails: **STOP all execution immediately** and report: "<Service> is not reachable. Start it with `docker compose up -d` and retry."
 5. If the target database does not exist, create it (use root credentials from docker-compose.yml)
-6. On success, print `✅ DB pre-flight passed` and continue
+6. On success, print `✅ <Service> pre-flight passed` for each service and continue
 
-If DB pre-flight fails, do NOT execute any specs (including non-DBA specs).
+If any service pre-flight fails, do NOT execute any specs (Infra, DBA, Backend, or Frontend) — terminate immediately.
 
 ### Step 5: Print discovery summary
 
@@ -118,7 +121,8 @@ If DB pre-flight fails, do NOT execute any specs (including non-DBA specs).
    - mysql: ✅ exists in docker-compose.yml
    - redis: ⚠️  missing → generated specs/infra/redis.md
    - env.md: ✅ updated with Redis section
-   ✅ DB pre-flight passed
+   ✅ mysql pre-flight passed
+   ✅ redis pre-flight passed
 ```
 
 ## Execution Order
