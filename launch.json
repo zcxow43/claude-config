@@ -12,6 +12,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "develop/frontend", "run", "dev"],
       "port": 5173
+    },
+    {
+      "name": "demo",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [".claude/demo-server.js"],
+      "port": 8099
     }
   ]
 }
