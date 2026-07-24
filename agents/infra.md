@@ -35,8 +35,9 @@ wdd/
 │   ├── redis/                  ← Redis config (if needed)
 │   ├── backend/Dockerfile      ← backend container image (if needed)
 │   └── frontend/Dockerfile     ← frontend container image (if needed)
-├── backend/                    ← Spring Boot project (read-only reference)
-└── frontend/                   ← React project (read-only reference)
+└── develop/
+    ├── backend/                 ← Spring Boot project (read-only reference)
+    └── frontend/                ← React project (read-only reference)
 ```
 
 ## Workflow

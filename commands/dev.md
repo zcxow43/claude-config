@@ -147,12 +147,14 @@ For each pending spec, spawn an Agent with the matching `subagent_type`:
 
 Each domain has its own working directory. **Never** place backend or frontend code in the project root.
 
-| Domain   | Working Directory | Description                              |
-|----------|-------------------|------------------------------------------|
-| Infra    | project root      | docker-compose.yml, Dockerfiles, docker/ |
-| DBA      | project root      | Migration SQL, docker init scripts       |
-| Backend  | `backend/`        | Maven project (pom.xml, src/, etc.)      |
-| Frontend | `frontend/`       | npm/Vite project (package.json, src/, etc.) |
+| Domain   | Working Directory     | Description                              |
+|----------|------------------------|------------------------------------------|
+| Infra    | project root           | docker-compose.yml, Dockerfiles, docker/ |
+| DBA      | project root           | Migration SQL, docker init scripts       |
+| Backend  | `develop/backend/`     | Maven project (pom.xml, src/, etc.)      |
+| Frontend | `develop/frontend/`    | npm/Vite project (package.json, src/, etc.) |
+
+If `develop/backend/` or `develop/frontend/` doesn't exist yet, the assigned agent creates it and scaffolds the project skeleton there (Maven `pom.xml` for backend, Vite `package.json` for frontend) as the first step of executing that spec — every backend spec's output lands under `develop/backend/`, every frontend spec's output lands under `develop/frontend/`, regardless of whether the folder already existed.
 
 Agent prompt format:
 ```
@@ -160,9 +162,9 @@ Execute the following spec. Read the existing codebase to understand conventions
 
 IMPORTANT: <domain-specific working directory instruction>
 - Infra: docker-compose.yml at project root, Dockerfiles and init scripts in `docker/`. After updating docker-compose.yml, run `docker compose up -d` and verify the new service is healthy.
-- DBA: place migration SQL in `src/main/resources/db/migration/` under `backend/`, and Docker init scripts in `docker/mysql/initdb/`.
-- Backend: ALL backend code goes in the `backend/` subdirectory. This is the Maven project root. Never place pom.xml or src/ in the project root.
-- Frontend: ALL frontend code goes in the `frontend/` subdirectory. This is the npm project root. Never place package.json or src/ in the project root.
+- DBA: place migration SQL in `src/main/resources/db/migration/` under `develop/backend/`, and Docker init scripts in `docker/mysql/initdb/`.
+- Backend: ALL backend code goes in the `develop/backend/` subdirectory. This is the Maven project root. Never place pom.xml or src/ in the project root. If `develop/backend/` doesn't exist yet, create it and scaffold the Maven project (pom.xml, src/main/java, src/test/java) before implementing this spec.
+- Frontend: ALL frontend code goes in the `develop/frontend/` subdirectory. This is the npm project root. Never place package.json or src/ in the project root. If `develop/frontend/` doesn't exist yet, create it and scaffold the Vite project before implementing this spec.
 
 Spec file: <path>
 
