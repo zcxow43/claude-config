@@ -50,6 +50,7 @@ requirement: "<original requirement summary>"
 
 ## Rules
 
+- **Check for an existing spec first**: if `specs/<domain>/` already has a file covering the same feature/entity, append new `## Requirements`/`## Acceptance Criteria` items to that file and set its `status` back to `pending` instead of creating a new file — this lets `/dev` process just the delta (see dev.md's "Incremental Specs & Consolidation"). Only create a new file for a genuinely new feature area.
 - Set `status: pending` on all new specs
 - If a domain has NO work needed, create the file with `status: skip` and note "No changes required"
 - Be specific and actionable — specs go directly to developer agents

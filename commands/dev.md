@@ -15,9 +15,12 @@ Check `$ARGUMENTS`:
 1. **Infrastructure Auto-Discovery** (MANDATORY, before anything else)
 2. **Scan** target spec files based on argument resolution above
 3. **Identify** files with `status: pending` in frontmatter
-4. **Check** files with `status: done` — if new content was appended after `## Execution Result`, treat as pending (strip old result, re-process)
+4. **Check** files with `status: done` for new/unchecked work:
+   - If new `- [ ]` items were appended to `## Acceptance Criteria` (an increment — see "Incremental Specs & Consolidation" below), treat as pending and execute **only the unchecked items**. Never re-run or strip already-checked (`- [x]`) criteria.
+   - If free-form content was appended after `## Execution Result` instead, first fold it into new `## Acceptance Criteria` bullet items, then execute those.
 5. **Execute** in strict dependency order: Infra → DBA → Backend → Frontend
-6. **Update** each spec's status to `done` after successful execution
+6. **Check off** (`- [x]`) every Acceptance Criteria item the agent implemented and verified working, immediately after executing it. Leave unmet items as `- [ ]` and state why in the Execution Result (e.g. deferred, blocked).
+7. **Update** each spec's status to `done` once every Acceptance Criteria item is checked, or explicitly noted as deferred/blocked
 
 ## Infrastructure Auto-Discovery (runs before any spec execution)
 
@@ -172,8 +175,9 @@ Spec file: <path>
 ```
 
 After the agent completes, update the spec file:
-- Change frontmatter to `status: done`
-- The agent should have appended an `## Execution Result` section
+- Check off (`- [x]`) every Acceptance Criteria item the agent implemented and verified; leave unmet items unchecked with a reason in the Execution Result
+- Change frontmatter to `status: done` only once every item is checked or explicitly noted as deferred/blocked
+- The agent should have appended an `## Execution Result` section — for an increment on a previously-done spec, append a new `### Increment <n> — <date>` subsection under the existing one rather than overwriting it
 
 ## Parallel Rules
 
@@ -192,6 +196,14 @@ Print progress as you go:
 
 All specs executed. 4/4 completed.
 ```
+
+## Incremental Specs & Consolidation
+
+Specs are living documents per feature, not one-shot files:
+
+- **Adding scope to a `done` feature**: append new bullet items to that domain's existing `## Acceptance Criteria` list instead of creating a new spec file for a small addition. Set frontmatter back to `status: pending` — this command will execute only the newly appended, unchecked (`- [ ]`) items and leave already-checked (`- [x]`) ones untouched.
+- **Execution Result history**: never overwrite or strip a prior `## Execution Result`. Append a new `### Increment <n> — <date>` subsection under it for each re-run, describing only what changed in that increment.
+- **Consolidating fragmented specs**: if a domain folder accumulates multiple small files describing the same feature/entity, merge them into one spec per feature area the next time they're touched, rather than letting them multiply — combine their `## Requirements` and `## Acceptance Criteria` sections and keep each file's own Execution Result history intact under clearly dated subsections.
 
 ## Error Handling
 
