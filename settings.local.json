@@ -21,7 +21,6 @@
       "TaskOutput",
       "EnterPlanMode",
       "ExitPlanMode",
-      "Monitor",
       "SendMessage",
       "ToolSearch"
     ]
