@@ -25,6 +25,7 @@ Example: `specs/backend/audit-update.md`
 status: pending
 title: "<feature title>"
 requirement: "<original requirement summary>"
+depends_on: [<slug>, <slug>]
 ---
 
 # <Feature Title> — <Domain> Spec
@@ -42,6 +43,11 @@ requirement: "<original requirement summary>"
 - [ ] <criterion 1>
 - [ ] <criterion 2>
 ```
+
+`depends_on` is **required on every backend and frontend spec** (omit it on DBA specs — see below) — a list of same-domain slugs that must reach `status: done` before this one can be built. `/dev` uses it to determine execution order within a domain, since filenames don't encode build order. Get this right now: `/dev` running "starting from a completely empty project" must reproduce the same result as running specs incrementally over time, and that only works if every spec honestly declares what it needs to already exist.
+- Set it to `[]` (or omit entirely) only if the spec genuinely has no same-domain prerequisite (e.g. a foundational table/API like `brand`/`currency` with no FK/import dependency on anything else you're adding).
+- List every same-domain spec whose code this one's implementation reads, imports, calls, or extends — not just the ones its own prose happens to mention. If in doubt, check what the target spec's own `Overview`/`Implementation Details` reuses (shared components, existing services, existing tables via FK) and depend on the specs that built those.
+- DBA specs don't use `depends_on` — order there comes from the migration version number embedded in the spec's own content (`V0xx__description.sql`), which every DBA spec must already state. State clearly which existing `Vxxx` your new migration comes after.
 
 ## Domain Split Rules
 
