@@ -135,7 +135,7 @@ If any service pre-flight fails, do NOT execute any specs (Infra, DBA, Backend, 
 3. **Backend** specs third — APIs must exist before frontend calls them
 4. **Frontend** specs last — UI connects to backend APIs
 
-**Within each domain, filename order is not a reliable ordering signal** — spec slugs are named after features, not creation date, so alphabetical order does not track build dependencies (e.g. `currency-pair-data-reset.md` sorts before `currency-pair.md`, but its migration can only run once `currency-pair.md`'s table exists). Determine order per domain instead:
+**Within each domain, filename order is not a reliable ordering signal** — spec slugs are named after features, not creation date, so alphabetical order does not track build dependencies (e.g. `currency-pair-definition.md` sorts before `currency-pair.md`, but its migration (`V009`) can only run once `currency-pair.md`'s table (`V003`) already exists). Determine order per domain instead:
 
 - **DBA**: order by the migration version number(s) each file *defines as its own*, not every `V0xx` it merely mentions — a spec's `## Migration SQL` heading/fenced block states exactly which `V0xx__description.sql` file(s) it is responsible for creating (e.g. `## Migration SQL — V010 (Delta: ...)`); a spec's prose may separately reference an *earlier* file's version purely as context ("next migration after `V009` is `V011`") — that referenced number belongs to the other file, not this one, and must not be picked up as this file's own. Extract only the version(s) each spec's own `## Migration SQL` section(s) define, then sort files by their lowest own version ascending. A file whose own migrations span a gap (e.g. one spec owns both `V001` and a later `V010` delta) still sorts at its lowest own number, and its later migration(s) must be applied only after every other file's migration with a smaller number has already been applied — do not apply a file's migrations out of order relative to its own accumulated history either.
 - **Backend / Frontend**: order by each spec's `depends_on:` frontmatter field — a list of same-domain slugs that must reach `status: done` before this spec starts (e.g. `depends_on: [brand, currency, audit]`). Topologically sort pending specs on this field; specs with no `depends_on` (or whose listed deps are already `done`) have no ordering constraint and may run in any order, including in parallel per "Parallel Rules" below. If a spec's `depends_on` lists another spec that is itself still `pending`, wait for that one to finish first — do not run them out of order or in parallel.
@@ -157,7 +157,7 @@ Each domain has its own working directory. **Never** place backend or frontend c
 | Domain   | Working Directory     | Description                              |
 |----------|------------------------|------------------------------------------|
 | Infra    | project root           | docker-compose.yml, Dockerfiles, docker/ |
-| DBA      | project root           | Migration SQL, docker init scripts       |
+| DBA      | project root           | Migration SQL embedded in the spec, applied directly to the live DB |
 | Backend  | `develop/backend/`     | Maven project (pom.xml, src/, etc.)      |
 | Frontend | `develop/frontend/`    | npm/Vite project (package.json, src/, etc.) |
 
@@ -169,7 +169,7 @@ Execute the following spec. Read the existing codebase to understand conventions
 
 IMPORTANT: <domain-specific working directory instruction>
 - Infra: docker-compose.yml at project root, Dockerfiles and init scripts in `docker/`. After updating docker-compose.yml, run `docker compose up -d` and verify the new service is healthy.
-- DBA: place migration SQL in `src/main/resources/db/migration/` under `develop/backend/`, and Docker init scripts in `docker/mysql/initdb/`.
+- DBA: migration SQL lives only inside this spec's `## Migration SQL` section — apply it directly against the live database via the `mysql` CLI. Do not write a standalone `.sql` file anywhere (no `docker/mysql/initdb/`, no `develop/backend/src/main/resources/db/migration/`).
 - Backend: ALL backend code goes in the `develop/backend/` subdirectory. This is the Maven project root. Never place pom.xml or src/ in the project root. If `develop/backend/` doesn't exist yet, create it and scaffold the Maven project (pom.xml, src/main/java, src/test/java) before implementing this spec.
 - Frontend: ALL frontend code goes in the `develop/frontend/` subdirectory. This is the npm project root. Never place package.json or src/ in the project root. If `develop/frontend/` doesn't exist yet, create it and scaffold the Vite project before implementing this spec.
 

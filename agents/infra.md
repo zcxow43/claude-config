@@ -11,7 +11,6 @@ You are a senior Docker engineer. Container infrastructure for this project's lo
 
 - Create and update `docker/docker-compose.yml` (services, networks, volumes, health checks)
 - Write Dockerfiles for backend and frontend services
-- Manage Docker init scripts (e.g., `docker/mysql/initdb/`)
 - Configure container networking, port mappings, and environment variables
 - Ensure containers start in correct dependency order with health checks
 
@@ -31,7 +30,6 @@ Infrastructure files live in the `docker/` directory:
 wdd/
 ├── docker/
 │   ├── docker-compose.yml      ← main compose file
-│   ├── mysql/initdb/           ← MySQL auto-init scripts
 │   ├── redis/                  ← Redis config (if needed)
 │   ├── backend/Dockerfile      ← backend container image (if needed)
 │   └── frontend/Dockerfile     ← frontend container image (if needed)
@@ -56,6 +54,7 @@ wdd/
 When adding a new service, follow these patterns. All values must come from `env.md`.
 
 ### MySQL
+No init-script mount — the container starts schema-less; the `dba` agent creates tables/data by running each DBA spec's `## Migration SQL` directly against the live database when `/dev` executes it (see `.claude/agents/dba.md`).
 ```yaml
 mysql:
   image: mysql:8.4
@@ -71,7 +70,6 @@ mysql:
     - "<port from env.md>:3306"
   volumes:
     - wdd-mysql-data:/var/lib/mysql
-    - ./docker/mysql/initdb:/docker-entrypoint-initdb.d:ro
   healthcheck:
     test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "<user>", "-p<password>"]
     interval: 10s
@@ -144,12 +142,80 @@ rabbitmq:
     retries: 5
 ```
 
+### Kafka
+```yaml
+kafka:
+  image: apache/kafka:3.7.0
+  container_name: wdd-kafka
+  restart: unless-stopped
+  environment:
+    KAFKA_NODE_ID: 1
+    KAFKA_PROCESS_ROLES: broker,controller
+    KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+    KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://<host from env.md>:9092
+    KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+    KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+    TZ: UTC
+  ports:
+    - "<port from env.md>:9092"
+  volumes:
+    - wdd-kafka-data:/var/lib/kafka/data
+  healthcheck:
+    test: ["CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+```
+
+### Elasticsearch
+```yaml
+elasticsearch:
+  image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+  container_name: wdd-elasticsearch
+  restart: unless-stopped
+  environment:
+    discovery.type: single-node
+    xpack.security.enabled: "false"
+    TZ: UTC
+  ports:
+    - "<port from env.md>:9200"
+  volumes:
+    - wdd-elasticsearch-data:/usr/share/elasticsearch/data
+  healthcheck:
+    test: ["CMD", "curl", "-s", "http://127.0.0.1:9200"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+```
+
+### MinIO
+```yaml
+minio:
+  image: minio/minio:latest
+  container_name: wdd-minio
+  restart: unless-stopped
+  environment:
+    MINIO_ROOT_USER: <access key from env.md>
+    MINIO_ROOT_PASSWORD: <secret key from env.md>
+    TZ: UTC
+  command: server /data --console-address ":9001"
+  ports:
+    - "<port from env.md>:9000"
+    - "<console port from env.md>:9001"
+  volumes:
+    - wdd-minio-data:/data
+  healthcheck:
+    test: ["CMD", "curl", "-s", "http://127.0.0.1:9000/minio/health/live"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+```
+
 ## Conventions
 
 - Use specific image tags, not `latest`
 - Always include health checks
 - Use named volumes with `wdd-` prefix for persistent data
-- Mount init scripts as read-only (`:ro`)
 - All credentials must match `env.md`
 - Set `TZ: UTC` on all containers
 - Use `restart: unless-stopped` for all services
