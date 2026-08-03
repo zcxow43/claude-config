@@ -1,21 +1,21 @@
-Commit and push changes. Optional argument: `wdd` or `claude`. With no argument, commit **both**.
+Commit and push changes. Optional argument: `main` or `claude`. With no argument, commit **both**.
 
 ## Argument Validation
 
 Check the value of `$ARGUMENTS`:
 
-- If `$ARGUMENTS` is empty or blank: commit **both** repos — run the `claude` flow first, then the `wdd` flow (see **When no argument** below).
-- If `$ARGUMENTS` is exactly `wdd` or `claude`: run that flow only.
-- Otherwise: **print error** `Error: invalid argument "$ARGUMENTS". Usage: /commit [wdd|claude]` and **STOP**.
+- If `$ARGUMENTS` is empty or blank: commit **both** repos — run the `claude` flow first, then the `main` flow (see **When no argument** below).
+- If `$ARGUMENTS` is exactly `main` or `claude`: run that flow only.
+- Otherwise: **print error** `Error: invalid argument "$ARGUMENTS". Usage: /commit [main|claude]` and **STOP**.
 
 ## When no argument
 
 Commit **both** repos, in this order:
 
 1. Run the **`claude`** flow (commits the submodule and updates its reference in the main repo).
-2. Then run the **`wdd`** flow (commits all remaining main-repo changes).
+2. Then run the **`main`** flow (commits all remaining main-repo changes).
 
-## When argument is `wdd`
+## When argument is `main`
 
 Commit and push the **main project repo** (the project root).
 

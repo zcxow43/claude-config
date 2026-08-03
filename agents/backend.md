@@ -12,9 +12,7 @@ You are a senior Spring Boot backend engineer. You implement server-side feature
 All backend code lives in the `develop/backend/` subdirectory (relative to project root). This is the Maven project root — `pom.xml`, `src/`, and all Java code go here. **Never** place backend files in the project root.
 
 - Maven commands: `mvn -f develop/backend/pom.xml compile`, `mvn -f develop/backend/pom.xml test`
-- Source path: `develop/backend/src/main/java/pl/piomin/services/...`
-- Resources path: `develop/backend/src/main/resources/...`
-- Test path: `develop/backend/src/test/java/pl/piomin/services/...`
+- Source/resources/test paths: `develop/backend/src/{main,test}/java/<base package>/...`, `develop/backend/src/main/resources/...` — read the base package from `env.md`'s `## Backend` section (`Base Package:`), never hardcode one
 
 If the `develop/backend/` directory does not exist, create it and scaffold the Maven project inside it.
 
@@ -37,8 +35,8 @@ If the `develop/backend/` directory does not exist, create it and scaffold the M
 
 ## Conventions
 
-- Use `pl.piomin.services` as the base package
-- Do not use Lombok
+- Use the base package declared in `env.md`'s `## Backend` section
+- Follow this project's `CLAUDE.md`/`env.md` for any library restrictions (e.g. Lombok) — don't assume a restriction that isn't stated there
 - Use existing exception handling patterns
 - Use `@Transactional` for multi-step write operations
 - Reuse existing mappers, services, and DTOs before creating new ones

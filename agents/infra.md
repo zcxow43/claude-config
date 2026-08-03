@@ -22,12 +22,14 @@ Default credentials for any new service: **Username: `app`, Password: `1234`**
 
 If `env.md` does not have a section for the service you are configuring, add the section with defaults before proceeding.
 
+**`<project>` below** = the basename of the git repository root (`basename "$(git rev-parse --show-toplevel)"`) — never hardcode a literal project name. This keeps container/volume names portable across whatever project this agent runs in.
+
 ## Working Directory
 
 Infrastructure files live in the `docker/` directory:
 
 ```
-wdd/
+<project root>/
 ├── docker/
 │   ├── docker-compose.yml      ← main compose file
 │   ├── redis/                  ← Redis config (if needed)
@@ -58,7 +60,7 @@ No init-script mount — the container starts schema-less; the `dba` agent creat
 ```yaml
 mysql:
   image: mysql:8.4
-  container_name: wdd-mysql
+  container_name: <project>-mysql
   restart: unless-stopped
   environment:
     MYSQL_ROOT_PASSWORD: root
@@ -69,7 +71,7 @@ mysql:
   ports:
     - "<port from env.md>:3306"
   volumes:
-    - wdd-mysql-data:/var/lib/mysql
+    - <project>-mysql-data:/var/lib/mysql
   healthcheck:
     test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "<user>", "-p<password>"]
     interval: 10s
@@ -81,7 +83,7 @@ mysql:
 ```yaml
 redis:
   image: redis:7-alpine
-  container_name: wdd-redis
+  container_name: <project>-redis
   restart: unless-stopped
   command: redis-server --requirepass <password from env.md>
   environment:
@@ -89,7 +91,7 @@ redis:
   ports:
     - "<port from env.md>:6379"
   volumes:
-    - wdd-redis-data:/data
+    - <project>-redis-data:/data
   healthcheck:
     test: ["CMD", "redis-cli", "-a", "<password>", "ping"]
     interval: 10s
@@ -101,7 +103,7 @@ redis:
 ```yaml
 mongodb:
   image: mongo:7
-  container_name: wdd-mongodb
+  container_name: <project>-mongodb
   restart: unless-stopped
   environment:
     MONGO_INITDB_ROOT_USERNAME: <from env.md>
@@ -111,7 +113,7 @@ mongodb:
   ports:
     - "<port from env.md>:27017"
   volumes:
-    - wdd-mongodb-data:/data/db
+    - <project>-mongodb-data:/data/db
   healthcheck:
     test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
     interval: 10s
@@ -123,7 +125,7 @@ mongodb:
 ```yaml
 rabbitmq:
   image: rabbitmq:3-management-alpine
-  container_name: wdd-rabbitmq
+  container_name: <project>-rabbitmq
   restart: unless-stopped
   environment:
     RABBITMQ_DEFAULT_USER: <from env.md>
@@ -134,7 +136,7 @@ rabbitmq:
     - "<port from env.md>:5672"
     - "<mgmt port from env.md>:15672"
   volumes:
-    - wdd-rabbitmq-data:/var/lib/rabbitmq
+    - <project>-rabbitmq-data:/var/lib/rabbitmq
   healthcheck:
     test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
     interval: 10s
@@ -146,7 +148,7 @@ rabbitmq:
 ```yaml
 kafka:
   image: apache/kafka:3.7.0
-  container_name: wdd-kafka
+  container_name: <project>-kafka
   restart: unless-stopped
   environment:
     KAFKA_NODE_ID: 1
@@ -159,7 +161,7 @@ kafka:
   ports:
     - "<port from env.md>:9092"
   volumes:
-    - wdd-kafka-data:/var/lib/kafka/data
+    - <project>-kafka-data:/var/lib/kafka/data
   healthcheck:
     test: ["CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
     interval: 10s
@@ -171,7 +173,7 @@ kafka:
 ```yaml
 elasticsearch:
   image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
-  container_name: wdd-elasticsearch
+  container_name: <project>-elasticsearch
   restart: unless-stopped
   environment:
     discovery.type: single-node
@@ -180,7 +182,7 @@ elasticsearch:
   ports:
     - "<port from env.md>:9200"
   volumes:
-    - wdd-elasticsearch-data:/usr/share/elasticsearch/data
+    - <project>-elasticsearch-data:/usr/share/elasticsearch/data
   healthcheck:
     test: ["CMD", "curl", "-s", "http://127.0.0.1:9200"]
     interval: 10s
@@ -192,7 +194,7 @@ elasticsearch:
 ```yaml
 minio:
   image: minio/minio:latest
-  container_name: wdd-minio
+  container_name: <project>-minio
   restart: unless-stopped
   environment:
     MINIO_ROOT_USER: <access key from env.md>
@@ -203,7 +205,7 @@ minio:
     - "<port from env.md>:9000"
     - "<console port from env.md>:9001"
   volumes:
-    - wdd-minio-data:/data
+    - <project>-minio-data:/data
   healthcheck:
     test: ["CMD", "curl", "-s", "http://127.0.0.1:9000/minio/health/live"]
     interval: 10s
@@ -215,11 +217,11 @@ minio:
 
 - Use specific image tags, not `latest`
 - Always include health checks
-- Use named volumes with `wdd-` prefix for persistent data
+- Use named volumes with `<project>-` prefix for persistent data
 - All credentials must match `env.md`
 - Set `TZ: UTC` on all containers
 - Use `restart: unless-stopped` for all services
-- Container names use `wdd-` prefix
+- Container names use `<project>-` prefix
 
 ## Output
 

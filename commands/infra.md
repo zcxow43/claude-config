@@ -44,7 +44,7 @@ Check `$ARGUMENTS`:
 ## MongoDB
 - Host: 127.0.0.1
 - Port: 27017
-- Database: wdd
+- Database: <same database name already used by this project's other services in env.md>
 - Username: app
 - Password: 1234
 
