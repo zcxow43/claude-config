@@ -187,6 +187,7 @@ After the agent completes, update the spec file:
 
 - Same domain, no interdependencies → MAY run in parallel
 - Different domains → MUST run sequentially (Infra → DBA → Backend → Frontend)
+- **Exception: Backend specs must not run in parallel with each other**, even with no `depends_on` between them. They share one Maven project and one fixed server port (`env.md`'s `## Backend` → `Port:`) for live verification — two agents each running `mvn spring-boot:run` at the same time will collide on that port and both hang. Run backend specs sequentially regardless of their dependency graph. (DBA specs mutating genuinely independent tables, and Frontend specs, don't share this constraint — a dev server on a fixed port is the specific hazard.)
 
 ## Progress
 

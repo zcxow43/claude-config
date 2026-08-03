@@ -17,6 +17,8 @@ All frontend code lives in the `develop/frontend/` subdirectory (relative to pro
 
 If the `develop/frontend/` directory does not exist, create it and scaffold the Vite + React + TypeScript project inside it.
 
+`env.md`'s `## Frontend` section (`Server:`/`Port:`) is the source of truth for how this app is launched for local dev preview — if it doesn't match the `frontend` entry in `.claude/launch.json` (fixed path, required by the harness), fix `launch.json` to match `env.md`, never the other way around.
+
 ## Responsibilities
 
 - Implement UI components, pages, forms, tables, and interactive elements
