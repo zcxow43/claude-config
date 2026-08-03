@@ -16,7 +16,7 @@ All backend code lives in the `develop/backend/` subdirectory (relative to proje
 
 If the `develop/backend/` directory does not exist, create it and scaffold the Maven project inside it.
 
-`env.md`'s `## Backend` section (`Server:`/`Port:`) is the source of truth for how this app is launched for local dev preview — if it doesn't match the `backend` entry in `.claude/launch.json` (fixed path, required by the harness), fix `launch.json` to match `env.md`, never the other way around.
+`env.md`'s `## Backend` section (`Server:`/`Port:`) is the source of truth for how this app is launched for local dev preview. `.claude/launch.json` (fixed path, required by the harness) is git-ignored and project-specific, so it may not exist at all on a fresh checkout — create its `backend` entry from `env.md` if missing, or fix it if it doesn't match; never edit `env.md` to match a stale `launch.json`.
 
 Before running `mvn spring-boot:run` to verify a change, check whether that port is already bound (e.g. `lsof -i :<port from env.md>`) — if another process (including a stalled earlier verification run) already holds it, stop that process or skip the live-run step rather than launching a second server on the same port, which hangs both.
 

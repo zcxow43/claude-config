@@ -26,7 +26,8 @@ Do NOT scaffold anything or touch `docker-compose.yml` if this pre-flight fails.
    - **Exists** → skip it entirely. Never touch or overwrite existing app code.
    - **Missing** → spawn the matching agent (`backend` for `## Backend`, `frontend` for `## Frontend`) with the prompt below, so the skeleton follows that agent's own conventions instead of being duplicated here.
 4. **For the `# Container` group**, spawn the `infra` agent once with the prompt below to reconcile `docker/docker-compose.yml` against every service section under `# Container`, then bring the services up and verify health.
-5. Print a summary table (see **Output** below).
+5. **Reconcile `.claude/launch.json` against every `# Develop` subsection that declares a `Server:`/`Port:` field** (Frontend, Backend, Demo, etc.). This file is git-ignored inside `.claude` (it's project-specific, not shared tooling — see `.claude/.gitignore`), so a fresh checkout of either repo won't have it on disk at all; do not assume it exists. For each subsection: split `Server:`'s value into `runtimeExecutable` (first token) and `runtimeArgs` (remaining tokens), and take `port` from `Port:`. If `.claude/launch.json` is missing, create it fresh with one entry per subsection. If it exists, add/update only the entries that don't already match `env.md` exactly — never invent a port or command not stated there.
+6. Print a summary table (see **Output** below).
 
 ## Agent Prompts
 
@@ -49,6 +50,7 @@ After both steps finish, print:
 | Develop  | backend  | scaffolded / skipped (exists)   |
 | Develop  | frontend | scaffolded / skipped (exists)   |
 | Container| database | compose service ensured, ✅ healthy |
+| Launch   | launch.json | created / updated / already matched env.md |
 
 ## Rules
 
