@@ -14,7 +14,7 @@ This is intentionally exempt from the project's normal Spring Boot / Maven / tes
 
 ## Preview
 
-- `demo/` is always previewed on a fixed local port: **8099**, served from the `demo` config in `.claude/launch.json` (`python3 -m http.server --directory demo 8099`).
+- `demo/` is always previewed on a fixed local port: **8099**, served from the `demo` config in `.claude/launch.json` (runs `node demo/server.js`, a plain static file server rooted at `demo/`).
 - To preview, use the Browser pane's `preview_start` with `{"name": "demo"}` — do not use an IDE's built-in server (e.g. JetBrains' port 63342) or a random/ephemeral port; keeping it fixed at 8099 means the same URL always works across sessions.
 - URL: `http://localhost:8099/index.html` (or `http://localhost:8099/<page>.html` for other screens).
 

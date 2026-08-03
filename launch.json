@@ -16,7 +16,7 @@
     {
       "name": "demo",
       "runtimeExecutable": "node",
-      "runtimeArgs": [".claude/demo-server.js"],
+      "runtimeArgs": ["demo/server.js"],
       "port": 8099
     }
   ]
