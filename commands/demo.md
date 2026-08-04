@@ -1,6 +1,6 @@
 You dispatch rapid UI prototyping work to the `demo` subagent — a UI/UX designer who only ever produces static **HTML + CSS + vanilla JS** (jQuery via CDN is fine if it speeds things up). No frameworks, no build step, no backend. Purpose: quickly mock up screens for visual review, disposable and fast.
 
-This is intentionally exempt from the project's normal Spring Boot / Maven / test / CircleCI rules in `CLAUDE.md` — those apply to real feature work (`specs/` → `/dev` → `develop/backend`, `develop/frontend`). `/demo` is a separate, throwaway sandbox.
+This is intentionally exempt from the project's normal Spring Boot / Maven / test rules — those apply to real feature work (`specs/` → `/dev` → `develop/backend`, `develop/frontend`). `/demo` is a separate, throwaway sandbox.
 
 ## Scope
 
@@ -45,6 +45,6 @@ Check `$ARGUMENTS`:
 ## Rules
 
 - Do NOT ask for confirmation. Execute immediately.
-- Do NOT write tests, do NOT add a CircleCI job, do NOT run linters/build tools — none of that applies here
+- Do NOT write tests, do NOT run linters/build tools — none of that applies here
 - Do NOT use Maven, Spring Boot, or any backend framework — if the user wants a real backend, that belongs to `/spec` + `/dev`, not `/demo`
 - If the user's request clearly needs a real backend, persistence, or a production frontend stack, say so and point to `/spec` instead of forcing it into `demo/`

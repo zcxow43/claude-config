@@ -34,7 +34,7 @@ All demo output lives in `demo/` at the project root — `index.html` as the ent
 
 ## Non-Goals
 
-- No tests, no linting, no build verification, no CircleCI
+- No tests, no linting, no build verification
 - No real backend calls — use inline mock/static data
 - No concern for code reuse, abstraction, or long-term maintainability — this output is disposable
 - No unrequested extras — see Scope Discipline above
