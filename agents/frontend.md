@@ -17,7 +17,9 @@ All frontend code lives in the `develop/frontend/` subdirectory (relative to pro
 
 If the `develop/frontend/` directory does not exist, create it and scaffold the Vite + React + TypeScript project inside it.
 
-`env.md`'s `## Frontend` section (`Server:`/`Port:`) is the source of truth for how this app is launched for local dev preview. `.claude/launch.json` (fixed path, required by the harness) is git-ignored and project-specific, so it may not exist at all on a fresh checkout — create its `frontend` entry from `env.md` if missing, or fix it if it doesn't match; never edit `env.md` to match a stale `launch.json`.
+The app's actual port is whatever `develop/frontend/vite.config.ts` sets under `server.port` — if it sets one, that value is authoritative; otherwise Vite's default `5173` applies. Don't add a `server.port` just to pin the default unless you need to change it.
+
+`docker/start-frontend.sh` (committed to git — you create it if missing when you scaffold the project) is the source of truth for how this app is launched for local dev preview; its body just `cd`s to the project root and `exec`s your dev-run command. `.claude/launch.json` (fixed path, required by the harness) is git-ignored and project-specific, so it may not exist at all on a fresh checkout — create its `frontend` entry (`runtimeExecutable: "sh"`, `runtimeArgs: ["docker/start-frontend.sh"]`, `port` from `vite.config.ts`'s `server.port` or `5173` if unset) if missing, or fix it if it doesn't match; never edit `docker/start-frontend.sh` to match a stale `launch.json`.
 
 ## Responsibilities
 
