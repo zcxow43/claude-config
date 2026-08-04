@@ -26,9 +26,8 @@ Do NOT scaffold anything or touch `docker-compose.yml` if this pre-flight fails.
    - **Exists** → skip it entirely. Never touch or overwrite existing app code, and never overwrite an existing `docker/start-<name>.sh`.
    - **Missing** → spawn the matching agent (`backend` for `## Backend`, `frontend` for `## Frontend`) with the prompt below. The agent picks the run command itself, following its own conventions — `env.md` no longer states one.
 4. **For the `# Container` group**, spawn the `infra` agent once with the prompt below to reconcile `docker/docker-compose.yml` against every service section under `# Container`, then bring the services up and verify health.
-5. **For Demo** (`demo/` — not declared in `env.md`, no scaffold agent; it's permanent and checked into git, unlike `develop/`): if `docker/start-demo.sh` is missing (e.g. after `/teardown` deleted `docker/`), recreate it directly — `exec node demo/server.js` from the project root, `chmod +x`. Skip if it already exists.
-6. **Reconcile `.claude/launch.json`** against every `# Develop` subsection with a scaffolded app or script (Frontend, Backend, Demo, etc.): `runtimeExecutable` is always `sh`, `runtimeArgs` is `["docker/start-<name>.sh"]` (that script must already exist from step 3/5 — never invent its command here), and `port` is read from that app's own config, never from `env.md` (which doesn't state ports) — backend's `develop/backend/src/main/resources/application.yml` `server.port`, frontend's `develop/frontend/vite.config.ts` `server.port` (or `5173`, Vite's default, if unset), demo's hardcoded `port` constant in `demo/server.js`. This file is git-ignored inside `.claude` (it's project-specific, not shared tooling — see `.claude/.gitignore`), so a fresh checkout of either repo won't have it on disk at all; do not assume it exists. If `.claude/launch.json` is missing, create it fresh with one entry per subsection. If it exists, add/update only the entries that don't already match exactly.
-7. Print a summary table (see **Output** below).
+5. **Reconcile `.claude/launch.json`** against every `# Develop` subsection with a scaffolded app or script (Frontend, Backend, etc.): `runtimeExecutable` is always `sh`, `runtimeArgs` is `["docker/start-<name>.sh"]` (that script must already exist from step 3 — never invent its command here), and `port` is read from that app's own config, never from `env.md` (which doesn't state ports) — backend's `develop/backend/src/main/resources/application.yml` `server.port`, frontend's `develop/frontend/vite.config.ts` `server.port` (or `5173`, Vite's default, if unset). This file is git-ignored inside `.claude` (it's project-specific, not shared tooling — see `.claude/.gitignore`), so a fresh checkout of either repo won't have it on disk at all; do not assume it exists. If `.claude/launch.json` is missing, create it fresh with one entry per subsection. If it exists, add/update only the entries that don't already match exactly.
+6. Print a summary table (see **Output** below).
 
 ## Agent Prompts
 
@@ -50,7 +49,6 @@ After both steps finish, print:
 |----------|----------|----------------------------------|
 | Develop  | backend  | scaffolded (+ start-backend.sh) / skipped (exists) |
 | Develop  | frontend | scaffolded (+ start-frontend.sh) / skipped (exists) |
-| Develop  | demo     | start-demo.sh recreated / skipped (exists) |
 | Container| database | compose service ensured, ✅ healthy |
 | Launch   | launch.json | created / updated / already matched env.md |
 
