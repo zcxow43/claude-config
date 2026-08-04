@@ -19,7 +19,7 @@ If the `develop/frontend/` directory does not exist, create it and scaffold the 
 
 The app's actual port is whatever `develop/frontend/vite.config.ts` sets under `server.port` — if it sets one, that value is authoritative; otherwise Vite's default `5173` applies. Don't add a `server.port` just to pin the default unless you need to change it.
 
-`docker/start-frontend.sh` (committed to git — you create it if missing when you scaffold the project) is the source of truth for how this app is launched for local dev preview; its body just `cd`s to the project root and `exec`s your dev-run command. `.claude/launch.json` (fixed path, required by the harness) is git-ignored and project-specific, so it may not exist at all on a fresh checkout — create its `frontend` entry (`runtimeExecutable: "sh"`, `runtimeArgs: ["docker/start-frontend.sh"]`, `port` from `vite.config.ts`'s `server.port` or `5173` if unset) if missing, or fix it if it doesn't match; never edit `docker/start-frontend.sh` to match a stale `launch.json`.
+`docker/launch.json` is the real, git-tracked file — edit its `frontend` entry (`runtimeExecutable: "npm"`, `runtimeArgs: ["--prefix", "develop/frontend", "run", "dev"]`, `port` from `vite.config.ts`'s `server.port` or `5173` if unset) if missing or wrong; never edit the app to match a stale entry instead. `.claude/launch.json` (fixed path, required by the harness) is just a symlink to `docker/launch.json` (`ln -s ../docker/launch.json .claude/launch.json`) — it's git-ignored and project-specific, so it may not exist at all on a fresh checkout even though `docker/launch.json` does; (re)create the symlink if it's missing or broken.
 
 ## Responsibilities
 
