@@ -19,7 +19,11 @@ If the `develop/frontend/` directory does not exist, create it and scaffold the 
 
 The app's actual port is whatever `develop/frontend/vite.config.ts` sets under `server.port` — if it sets one, that value is authoritative; otherwise Vite's default `5173` applies. Don't add a `server.port` just to pin the default unless you need to change it.
 
-`docker/launch.json` is the real, git-tracked file — edit its `frontend` entry (`runtimeExecutable: "npm"`, `runtimeArgs: ["--prefix", "develop/frontend", "run", "dev"]`, `port` from `vite.config.ts`'s `server.port` or `5173` if unset) if missing or wrong; never edit the app to match a stale entry instead. `.claude/launch.json` (fixed path, required by the harness) is just a symlink to `docker/launch.json` (`ln -s ../docker/launch.json .claude/launch.json`) — it's git-ignored and project-specific, so it may not exist at all on a fresh checkout even though `docker/launch.json` does; (re)create the symlink if it's missing or broken.
+`docker/launch.json` is the real, git-tracked file. Its shape is fixed by the harness — a top-level object with `version` and a `configurations` array, one entry per app, each with its own `name`:
+```json
+{ "version": "0.0.1", "configurations": [ { "name": "frontend", "runtimeExecutable": "npm", "runtimeArgs": ["--prefix", "develop/frontend", "run", "dev"], "port": 5173 }, { "name": "backend", ... } ] }
+```
+If the file doesn't exist yet, create it with just your `frontend` entry in that shape (don't invent a different structure). If it already exists (e.g. a concurrent backend scaffold created it first), add/fix your `frontend` entry inside the existing `configurations` array — never replace the whole file or drop another app's entry. `port` comes from `vite.config.ts`'s `server.port` or `5173` if unset. `.claude/launch.json` (fixed path, required by the harness) is just a symlink to `docker/launch.json` (`ln -s ../docker/launch.json .claude/launch.json`) — it's git-ignored and project-specific, so it may not exist at all on a fresh checkout even though `docker/launch.json` does; (re)create the symlink if it's missing or broken.
 
 ## Responsibilities
 

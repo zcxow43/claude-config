@@ -18,7 +18,11 @@ If the `develop/backend/` directory does not exist, create it and scaffold the M
 
 The app's actual port is whatever `develop/backend/src/main/resources/application.yml`'s `server.port` says — if that file exists, that value is authoritative; only when scaffolding fresh do you get to choose one (default `8080`, Spring Boot's standard, written explicitly into `application.yml`).
 
-`docker/launch.json` is the real, git-tracked file — edit its `backend` entry (`runtimeExecutable: "mvn"`, `runtimeArgs: ["-f", "develop/backend/pom.xml", "spring-boot:run"]`, `port` from `application.yml`'s `server.port`) if missing or wrong; never edit the app to match a stale entry instead. `.claude/launch.json` (fixed path, required by the harness) is just a symlink to `docker/launch.json` (`ln -s ../docker/launch.json .claude/launch.json`) — it's git-ignored and project-specific, so it may not exist at all on a fresh checkout even though `docker/launch.json` does; (re)create the symlink if it's missing or broken.
+`docker/launch.json` is the real, git-tracked file. Its shape is fixed by the harness — a top-level object with `version` and a `configurations` array, one entry per app, each with its own `name`:
+```json
+{ "version": "0.0.1", "configurations": [ { "name": "backend", "runtimeExecutable": "mvn", "runtimeArgs": ["-f", "develop/backend/pom.xml", "spring-boot:run"], "port": 8080 }, { "name": "frontend", ... } ] }
+```
+If the file doesn't exist yet, create it with just your `backend` entry in that shape (don't invent a different structure). If it already exists (e.g. a concurrent frontend scaffold created it first), add/fix your `backend` entry inside the existing `configurations` array — never replace the whole file or drop another app's entry. `port` comes from `application.yml`'s `server.port`. `.claude/launch.json` (fixed path, required by the harness) is just a symlink to `docker/launch.json` (`ln -s ../docker/launch.json .claude/launch.json`) — it's git-ignored and project-specific, so it may not exist at all on a fresh checkout even though `docker/launch.json` does; (re)create the symlink if it's missing or broken.
 
 Before running `mvn spring-boot:run` to verify a change, check whether that port is already bound (e.g. `lsof -i :<port from application.yml>`) — if another process (including a stalled earlier verification run) already holds it, stop that process or skip the live-run step rather than launching a second server on the same port, which hangs both.
 
