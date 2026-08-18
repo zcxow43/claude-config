@@ -1,6 +1,6 @@
-You generate a consolidated **Integrated Architecture & Stackable Specification** document from a connected cluster of backend specs, and save it under `docs/blueprint/`.
+You generate a consolidated, **big-picture, diagram-led** integrated architecture document from a connected cluster of backend specs, and save it under `docs/blueprint/`.
 
-This is a different artifact from `/doc` (`.claude/commands/doc.md`). `/doc`'s backend output is diagrams-only — no tables, no prose. `/doc-blue-print` is the opposite: it stacks multiple single-feature specs into one system-level document with per-entity field tables, constraint lists, data-flow diagrams, mutation/audit matrices, end-to-end scenario walkthroughs, and a delta/overlay template so future specs can be folded in without rewriting the whole document. Reference shape: an externally-provided "Exchange Rate Management — Integrated Architecture & Stackable Specification" PDF that stacked `brand`/`currency`/`currency-pair-definition`/`currency-pair`/`currency-pair-approval`/`spread`/`audit` into one file — that is exactly the shape to reproduce here.
+This is the big-picture layer only — it deliberately does **not** carry field-level or rule-level detail anymore. `/doc-backend` is where that detail lives, one file per spec topic (`docs/backend/<slug>.md`: field tables, constraints, cross-topic rules, full API list). `/doc-blue-print` stacks multiple single-feature specs into one system-level document built around diagrams: a full architecture diagram, per-entity excerpt/flow diagrams, and cross-spec end-to-end scenario walkthroughs — every entity chapter ends with a pointer into its `/doc-backend` file for the detail. Reference shape: an externally-provided "Exchange Rate Management — Integrated Architecture & Stackable Specification" PDF that stacked `brand`/`currency`/`currency-pair-definition`/`currency-pair`/`currency-pair-approval`/`spread`/`audit` into one file — the diagram/scenario portions of that shape are what to reproduce here (its field tables and matrices now belong in `/doc-backend`).
 
 Backend only for now (`specs/backend/`) — that is the domain this was designed against and the domain that actually has a fully-connected `depends_on` graph today.
 
@@ -48,25 +48,21 @@ Output file: `docs/blueprint/<slug>.md`. Its images live in a sibling folder, `d
 
 Agent prompt format:
 ```
-For THIS task only, ignore your default 12-section per-spec template. You are producing ONE integrated document that stacks all of the specs below into a single system-level blueprint — read every one of them fully before writing anything, and treat their union (not any single file) as "the system".
+For THIS task only, ignore your default 12-section per-spec template. You are producing ONE integrated, big-picture document that stacks all of the specs below into a single system-level blueprint — read every one of them fully before writing anything, and treat their union (not any single file) as "the system". This document is diagram-led and big-picture only — field-level and rule-level detail belongs in the separate per-topic backend docs (`docs/backend/<slug>.md`), not here.
 
 Produce exactly this structure, in Traditional Chinese, current-state-only (ignore superseded/historical behavior — same priority order you always use):
 
 1. **標題 + 一段目的說明**：這份文件整合了哪些 spec、整合後系統現在的樣子（不是逐一介紹每份 spec 在做什麼）。
 
-2. **完整架構圖**：一張 Mermaid flowchart，把所有 scope 內的 entity/data store 當節點，畫出主要關係／fan-out／cascade／audit 邊。標記為 [[DIAGRAM:1]] 取代整個 ```mermaid 區塊（保留 Mermaid 原始碼在你回覆的其他地方，用 <diagram id="1"> ... </diagram> 包起來，讓呼叫端能取出來渲染 — 其餘規則不變：不用 Controller/Service/Mapper 之類實作名詞，process 要有業務語意）。
+2. **完整架構圖**：一張 Mermaid flowchart，把所有 scope 內的 entity/data store 當節點，畫出主要關係／fan-out／cascade／audit 邊。標記為 [[DIAGRAM:1]] 取代整個 ```mermaid 區塊（保留 Mermaid 原始碼在你回覆的其他地方，用 <diagram id="1"> ... </diagram> 包起來，讓呼叫端能取出來渲染 — 其餘規則不變：不用 Controller/Service/Mapper 之類實作名詞，process 要有業務語意）。任何橫跨兩個以上 entity 的規則，都要用這張圖上的標籤邊表示出來，不要另外寫成表格。
 
-3. **每個 entity/data store 一個小節**：說明、Field 表（| Field | Type/Role | Rule |）、Constraints（bullet list）、若該 entity 的 create/update/delete 邏輯不單純（例如 fan-out、delete guard、audit 路由）就加一張局部 Mermaid 圖，標記為 [[DIAGRAM:2]]、[[DIAGRAM:3]]... 依序遞增，原始碼同樣用 <diagram id="n"> 包起來。
+3. **每個 entity/data store 一個小節**：3–5 句話說明這個 entity 的業務角色、以及它在整個系統大圖裡的位置（不要寫 Field 表或逐條 Constraints——那些屬於 `docs/backend/<slug>.md`）。若該 entity 的 create/update/delete 邏輯不單純（例如 fan-out、delete guard、audit 路由），仍然加一張局部 Mermaid 圖，標記為 [[DIAGRAM:2]]、[[DIAGRAM:3]]... 依序遞增，原始碼同樣用 <diagram id="n"> 包起來——圖表保留，細節表格移除。每個小節最後一行固定加上：`詳細欄位、規則與 API 定義 → docs/backend/<slug>.md`（`<slug>` 對應這個 entity 所屬的 spec 檔名）。
 
-4. **通用／可重用模組小節**（如果 scope 內有，例如 audit）：說明它的 contract 設計（entityType/snapshot/validate/apply 之類），強調它對其他 entity 一無所知。
+4. **通用／可重用模組小節**（如果 scope 內有，例如 audit）：說明它的 contract 設計（entityType/snapshot/validate/apply 之類），強調它對其他 entity 一無所知。同樣以一段說明為主，不需要表格。
 
 5. **End-to-End 情境走查**：從 scope 內各 spec 的 Acceptance Criteria 挑 3–6 個具代表性的完整情境，各自寫成短的 numbered steps（例如「建立 Global Definition」「把某品牌 pair 改成 MANUAL」「刪除 Definition 前的 guard」）。
 
-6. **Mutation/Audit Matrix**：表格，列 = scope 內每個 feature，欄 = CREATE/UPDATE/DELETE/GET，內容 = Direct / Audited / No API / Live direct 等。
-
-7. **Cross-Spec Constraint Matrix**：表格，列出橫跨兩個以上 entity 的規則（Rule / Source spec / Effect）。
-
-8. **Source-of-Truth Mapping**：表格，每個整合章節對應回哪個 spec 檔案路徑（`specs/backend/<file>.md`），方便追溯。
+6. **延伸閱讀**：表格，每個 §3 章節對應回哪個 backend 詳細文件（Chapter / `docs/backend/<slug>.md`），方便讀者從大方向跳去看細節定義。
 
 Still apply your existing rules: never invent behavior not in the specs, business terminology only, distinguish pending audit requests from committed data, identify immutable fields and delete restrictions. This document is read by non-engineers as well as engineers — do not use HTTP verbs/status codes, raw function-call syntax, or words like "snapshot"/"entity" as labels; say what actually happens in plain business Traditional Chinese (see "Language & Terminology" above for the exact banned list and replacements).
 
@@ -151,7 +147,7 @@ Add/update in `docs/README.md`:
 
 ```markdown
 ## Blueprints (integrated architecture specs)
-- [<slug>](blueprint/<slug>.md) — <one-line: which specs are stacked>
+- [<slug>](blueprint/<slug>.md) — <one-line: which specs are stacked>. Big-picture/diagram-led — see the linked `docs/backend/<slug>.md` files for field/constraint/API detail.
 ```
 
 ## Output
