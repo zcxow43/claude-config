@@ -1,4 +1,4 @@
-You are a technical architect. Analyze the following requirement and generate **three** spec files — one each for frontend, backend, and DBA.
+You are a technical architect. Analyze the following requirement and generate **three** spec files — one each for frontend, backend, and DBA — then, for whichever domains actually changed, chain into the matching doc command(s) (`/doc-fronend`, `/doc-backend`, `/doc-blue-print`, `/doc-db`) so a single `/spec` run can produce all five artifacts: spec, blueprint, frontend, backend, db (see "Doc Generation" below).
 
 ## Requirement
 
@@ -11,6 +11,7 @@ $ARGUMENTS
 3. **Analyze** the requirement and split into three domain concerns
 4. **Check for drift** (see "Keeping Specs Concise" below): if this requirement changes a feature that already has a spec, decide now whether to fold the change in directly or append a delta — before writing anything
 5. **Generate/update** spec file(s) per domain and save to the `specs/` subfolder
+6. **Chain into doc generation** for whichever domains actually changed in this run — see "Doc Generation" below
 
 ## File Naming
 
@@ -89,6 +90,20 @@ Its `## Execution Result` (and any `### Increment <n>`) is a factual record of w
 ### Signal to watch for
 If you're about to write a sentence like "this supersedes X" or "note: Y no longer applies, see Z" — stop, and instead go edit X/Y directly to say the new truth. Qualifier-on-top-of-old-text is exactly the pattern that makes specs harder to read with each revision; the fix is always to edit the original statement, not to add a correction next to it.
 
+## Doc Generation
+
+`/spec` is the single entry point for all five artifacts a requirement can produce: the spec itself, plus the four downstream docs — blueprint, frontend storyboard, backend API doc, DB ER model. The four doc commands (`.claude/commands/doc-fronend.md`, `doc-backend.md`, `doc-blue-print.md`, `doc-db.md`) still exist and still work standalone (a user can run `/doc-backend spread` directly at any time) — this step just makes `/spec` chain into them automatically, scoped to **only the domains this run actually touched**. Never regenerate a domain's docs because another domain changed, and never regenerate a domain whose spec file wasn't actually created or edited in step 5 (a spec that stayed `status: skip`, or that you checked and found didn't need changes, does not count as touched).
+
+For each domain with at least one spec file created/edited this run, follow the referenced command's own file **exactly as written there** (its own Argument Handling, Process, Dispatching, Rendering, Index, Output) — this section only decides *whether* to trigger it and *what scope to pass*, never how it works internally, so behavior stays identical to running that command by hand:
+
+- **Frontend spec(s) changed** → for each affected group under `/doc-fronend`'s Grouping Rule (`.claude/commands/doc-fronend.md`), run its Process with that group slug as scope. Two changed specs landing in the same group only trigger that group once.
+- **Backend spec(s) changed** → two things, both scoped from the changed slug(s):
+  1. Run `/doc-backend`'s Process (`.claude/commands/doc-backend.md`) with scope = the changed slug(s) — one output file per changed spec.
+  2. Run `/doc-blue-print`'s Process (`.claude/commands/doc-blue-print.md`) once per changed slug's connected component in the `depends_on` graph — it resolves the full component itself, so pass one changed slug per component and skip any other changed slug that resolves to the same component (avoid re-rendering the same blueprint twice in one run).
+- **DBA spec(s) changed** → run `/doc-db`'s Process (`.claude/commands/doc-db.md`). It always regenerates the whole ER model regardless of scope — that's fine, only the *trigger* (at least one `specs/dba/*.md` changed this run) is scoped, not its own internal behavior.
+
+If a run touches zero domains for a given category, skip that category's docs entirely — don't touch its existing files.
+
 ## Output
 
 After generating all files, print this summary table:
@@ -99,4 +114,15 @@ After generating all files, print this summary table:
 | Backend  | specs/backend/slug.md  | pending |
 | DBA      | specs/dba/slug.md      | pending |
 
-Do NOT ask for confirmation. Generate all three specs immediately.
+Then, if any doc generation ran (per "Doc Generation" above), append a second table listing what was produced:
+
+| Artifact  | Command       | File(s)                              |
+|-----------|---------------|---------------------------------------|
+| Blueprint | /doc-blue-print | docs/blueprint/<slug>.md            |
+| Frontend  | /doc-fronend    | docs/frontend/<group>.md             |
+| Backend   | /doc-backend    | docs/backend/<slug>.md               |
+| DB        | /doc-db         | docs/db/er-model.md                  |
+
+Omit any row for a category that didn't run this time.
+
+Do NOT ask for confirmation. Generate all three specs, then chain into doc generation, immediately.
