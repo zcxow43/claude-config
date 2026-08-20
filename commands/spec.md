@@ -53,9 +53,13 @@ depends_on: [<slug>, <slug>]
 
 ## Domain Split Rules
 
-- **Frontend** (`specs/frontend/`): UI components, pages, forms, API calls, user interactions, validation display, routing
-- **Backend** (`specs/backend/`): REST APIs, controllers, services, mappers, DTOs, validation, business logic, transactions
-- **DBA** (`specs/dba/`): CREATE/ALTER TABLE, indexes, constraints, migration SQL, seed data. **One table per spec file (SRP)** — even when a single requirement introduces several related tables in one migration batch (e.g. a parent + a join table), give each table its own `specs/dba/<table-name>.md`; do not bundle multiple `CREATE TABLE`s into one file. A one-time data-only migration (a `DELETE`/`UPDATE` cleanup with no schema change) is not its own feature — fold it into the spec of the table it primarily mutates as a new `## Migration SQL — V0xx` section, rather than creating a standalone `*-reset.md`/`*-cleanup.md` file. **Write the SQL only into the spec's own `## Migration SQL` section** — never generate a standalone `.sql` file (no `docker/mysql/initdb/`, no backend migration folder). `/dev`'s `dba` agent applies that embedded SQL directly against the live database every time it executes the spec; the spec file is the sole source of schema truth.
+Each domain has its own rules file — read the one relevant to each spec you touch, fully, before step 3 ("Analyze") and again before step 5 ("Generate/update"):
+
+- `.claude/rules/frontend.md` — scope of `specs/frontend/`, plus standing rules (e.g. colors must match `docs/frontend/`'s storyboard, fixed regardless of theme preference)
+- `.claude/rules/backend.md` — scope of `specs/backend/`, plus standing rules
+- `.claude/rules/dba.md` — scope of `specs/dba/`, plus standing rules (one table per file, migration SQL lives only in the spec)
+
+These are classification + standing-rule files, not implementation conventions (those live in `.claude/agents/{frontend,backend,dba}.md` instead) — so other commands can consult the same definitions without duplicating them, and each domain's rules can grow independently.
 
 ## Rules
 
