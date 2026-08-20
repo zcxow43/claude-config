@@ -11,7 +11,8 @@ $ARGUMENTS
 3. **Analyze** the requirement and split into three domain concerns
 4. **Check for drift** (see "Keeping Specs Concise" below): if this requirement changes a feature that already has a spec, decide now whether to fold the change in directly or append a delta — before writing anything
 5. **Generate/update** spec file(s) per domain and save to the `specs/` subfolder
-6. **Chain into doc generation** for whichever domains actually changed in this run — see "Doc Generation" below
+6. **Verify cross-domain consistency** (see "Cross-Domain Consistency" below) before treating the run as finished
+7. **Chain into doc generation** for whichever domains actually changed in this run — see "Doc Generation" below
 
 ## File Naming
 
@@ -89,6 +90,19 @@ Its `## Execution Result` (and any `### Increment <n>`) is a factual record of w
 
 ### Signal to watch for
 If you're about to write a sentence like "this supersedes X" or "note: Y no longer applies, see Z" — stop, and instead go edit X/Y directly to say the new truth. Qualifier-on-top-of-old-text is exactly the pattern that makes specs harder to read with each revision; the fix is always to edit the original statement, not to add a correction next to it.
+
+## Cross-Domain Consistency (Doc Is Source of Truth)
+
+The three domain specs describe one feature from three angles — they must agree on a single contract, not three independent guesses. Before treating any `/spec` run as done, cross-check every spec touched this run (and every existing spec it references via `depends_on` or shared table/entity) for:
+
+- **Frontend ↔ Backend**: every API call the frontend spec makes — path, method, request body fields, response fields, status/error codes — must match the backend spec's endpoint contract exactly. Same field names and types on both sides; no field the frontend reads/sends that the backend spec doesn't define, and vice versa.
+- **Backend ↔ DBA**: every field the backend spec's service/mapper/DTO reads or writes must match the DBA spec's column names, types, nullability, and constraints exactly. No backend field without a backing column; no silent type mismatch (e.g. backend treats a column as `String` but DBA spec defines it `ENUM`/`INT`).
+- **Frontend ↔ DBA**: every screen field that ultimately displays or edits a stored value must trace to a real column in the DBA spec — no phantom fields invented on the frontend that neither backend nor DBA account for.
+
+**If a mismatch is found, the fix always goes into the spec doc(s) first — doc is authoritative, not code:**
+1. Edit the spec doc(s) so all three domains state the same single, current contract (apply the "Keeping Specs Concise" rules above — edit the contract text in place, don't layer a correction note on top).
+2. If code has already been built (`status: done`) and disagrees with the corrected doc, the code is what's wrong. Append the fix as new unchecked `## Acceptance Criteria` items on the affected domain spec(s) and set `status: pending` so `/dev` brings the code in line with the doc — never resolve a mismatch by rewriting the spec to match whatever the code currently does.
+3. This check runs on **every** `/spec` invocation, not only when the current requirement obviously spans multiple domains — a change scoped to one domain (e.g. renaming a backend response field) can silently break its contract with an already-existing spec in another domain (e.g. the frontend spec that still reads the old field name). Check specs the current change touches indirectly, not just the ones it creates/edits directly.
 
 ## Doc Generation
 
