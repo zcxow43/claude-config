@@ -1,8 +1,10 @@
-You generate a consolidated, **big-picture, diagram-led** integrated architecture document from a connected cluster of backend specs, and save it under `docs/blueprint/`.
+You generate **one consolidated, big-picture, diagram-led** integrated architecture document covering every backend spec, and save it under `docs/blueprint/`.
 
-This is the big-picture layer only — it deliberately does **not** carry field-level or rule-level detail anymore. `/doc-backend` is where that detail lives, one file per spec topic (`docs/backend/<slug>.md`: field tables, constraints, cross-topic rules, full API list). `/doc-blue-print` stacks multiple single-feature specs into one system-level document built around diagrams: a full architecture diagram, per-entity excerpt/flow diagrams, and cross-spec end-to-end scenario walkthroughs — every entity chapter ends with a pointer into its `/doc-backend` file for the detail. Reference shape: an externally-provided "Exchange Rate Management — Integrated Architecture & Stackable Specification" PDF that stacked `brand`/`currency`/`currency-pair-definition`/`currency-pair`/`currency-pair-approval`/`spread`/`audit` into one file — the diagram/scenario portions of that shape are what to reproduce here (its field tables and matrices now belong in `/doc-backend`).
+This is the big-picture layer only — it deliberately does **not** carry field-level or rule-level detail anymore. `/doc-backend` is where that detail lives, one file per spec topic (`docs/backend/<slug>.md`: field tables, constraints, cross-topic rules, full API list). `/doc-blue-print` stacks *every* spec into one system-level document built around diagrams: a full architecture diagram, per-entity excerpt/flow diagrams, and cross-spec end-to-end scenario walkthroughs — every entity chapter ends with a pointer into its `/doc-backend` file for the detail. Reference shape: an externally-provided "Exchange Rate Management — Integrated Architecture & Stackable Specification" PDF that stacked `brand`/`currency`/`currency-pair-definition`/`currency-pair`/`currency-pair-approval`/`spread`/`audit` into one file — the diagram/scenario portions of that shape are what to reproduce here (its field tables and matrices now belong in `/doc-backend`).
 
-Backend only for now (`specs/backend/`) — that is the domain this was designed against and the domain that actually has a fully-connected `depends_on` graph today.
+Backend only for now (`specs/backend/`).
+
+**There is always exactly one blueprint, never one per feature or per connected component.** Confirmed by the user after seeing per-component fragmentation in practice: two unconnected entities (no shared `depends_on` edge, e.g. a master-data table like `brand` and a standalone CRUD entity like `currency`) still belong in the *same* single picture — the point of a "blueprint" is one panorama of the whole system, not a gallery of one-entity diagrams that happen to sit in separate files. Two entities with no relationship to each other simply render as two unconnected clusters inside that one diagram (never invent a relationship that isn't in the specs) — they do not get split into separate documents. This mirrors `/doc-db`'s own panorama-first design.
 
 ## Language & Terminology
 
@@ -21,26 +23,21 @@ Label brevity (this is not optional — it is what makes the previous rule rende
 
 ## Argument Handling
 
-Check `$ARGUMENTS`:
+Ignore `$ARGUMENTS` — always regenerate the single unified blueprint covering every non-`skip` spec in `specs/backend/`. Re-running this command is cheap (one `Agent` dispatch), so there is no narrower-scope mode to choose between; if you want to view just one entity's detail, that's what `docs/backend/<slug>.md` (`/doc-backend`) is for.
 
-- **Empty** or **`all`**: scope = every non-`skip` spec in `specs/backend/`.
-- **A spec slug** (e.g. `spread`, `currency-pair`): scope = that spec's full connected component in the `depends_on` graph — every spec reachable by following `depends_on` edges in **either** direction, transitively (not just direct dependencies, and not `/doc`'s curated "workflow cohesion" judgment call — a blueprint is exhaustive over the connected subsystem, by construction). Skip any spec with `status: skip`.
-
-Output slug: `backend` when scope is "every spec"; otherwise the given spec slug.
-
-Output file: `docs/blueprint/<slug>.md`. Its images live in a sibling folder, `docs/blueprint/<slug>/` — never flat alongside other slugs' images in `docs/blueprint/` directly (see "Rendering" and "Local Excerpt Diagrams" below for exact filenames).
+Output slug is always `backend`. Output file: `docs/blueprint/backend.md`. Its images live in a sibling folder, `docs/blueprint/backend/` — never flat alongside other docs' images in `docs/blueprint/` directly (see "Rendering" and "Local Excerpt Diagrams" below for exact filenames).
 
 ## Process
 
 1. **Read** every non-`skip` spec in `specs/backend/`.
-2. **Build the dependency graph** from each spec's `depends_on` frontmatter (edges are undirected for the purpose of finding the connected component — a spec depended on by many others is still "in" the blueprint of any one of them).
-3. **Resolve scope** per Argument Handling above.
-4. **Dispatch**: one `Agent` call, `subagent_type: "solution-architect"`, covering the *entire* scope in a single prompt (see "Dispatching" below) — the point of a blueprint is the cross-spec integrated view, so do not fragment this into one call per entity.
-5. **Render**: the agent returns Mermaid diagram blocks tagged with placeholders (`[[DIAGRAM:n]]`). For any diagram depicting a cross-layer handoff (see "Diagram Style — Cross-Layer Handoff Flows" below), rewrite it into that colored-box flowchart shape yourself before rendering — the agent may draft it as a `sequenceDiagram`, but that is not the final shape. For each, write the (possibly rewritten) Mermaid source to a scratch `.mmd` file and render to PNG with Mermaid CLI (see "Rendering" below) into `docs/blueprint/<slug>/`.
-6. **Derive chapter-opener excerpts**: once Diagram 1's final Mermaid source is locked in, mechanically crop one small "local view" per §3 chapter from it — see "Local Excerpt Diagrams — Chapter Openers" below. This is a render-time derivation you do yourself; it is not something you ask the agent for.
-7. **Assemble**: take the agent's returned markdown body and replace each `[[DIAGRAM:n]]` placeholder with `![...](<slug>/n.png)`. Insert each chapter's excerpt image (from step 6) immediately after that chapter's `### 3.x` heading, before its "說明" sentence and Field table. Never leave a `[[DIAGRAM:n]]` placeholder or a raw ` ```mermaid ` fence in the final file.
-8. **Index**: add/update a `## Blueprints` section in `docs/README.md`.
-9. **Print** the summary table (see "Output" below).
+2. **Dispatch**: one `Agent` call, `subagent_type: "solution-architect"`, covering *every* spec in a single prompt (see "Dispatching" below) — the point of a blueprint is the cross-spec integrated view, so do not fragment this into one call per entity, and do not split entities across multiple output files just because some of them have no relationship to each other.
+3. **Render**: the agent returns Mermaid diagram blocks tagged with placeholders (`[[DIAGRAM:n]]`). For any diagram depicting a cross-layer handoff (see "Diagram Style — Cross-Layer Handoff Flows" below), rewrite it into that colored-box flowchart shape yourself before rendering — the agent may draft it as a `sequenceDiagram`, but that is not the final shape. For each, write the (possibly rewritten) Mermaid source to a scratch `.mmd` file and render to PNG with Mermaid CLI (see "Rendering" below) into `docs/blueprint/backend/`.
+4. **Derive chapter-opener excerpts**: once Diagram 1's final Mermaid source is locked in, mechanically crop one small "local view" per §3 chapter from it — see "Local Excerpt Diagrams — Chapter Openers" below. This is a render-time derivation you do yourself; it is not something you ask the agent for.
+5. **Assemble**: take the agent's returned markdown body and replace each `[[DIAGRAM:n]]` placeholder with `![...](backend/n.png)`. Insert each chapter's excerpt image (from step 4) immediately after that chapter's `### 3.x` heading, before its "說明" sentence and Field table. Never leave a `[[DIAGRAM:n]]` placeholder or a raw ` ```mermaid ` fence in the final file.
+6. **Index**: add/update a `## Blueprints` section in `docs/README.md`.
+7. **Print** the summary table (see "Output" below).
+
+If a previous run left per-entity fragments (`docs/blueprint/<other-slug>.md` files from before this command consolidated to a single output), delete them and their image folders as part of this run — there is only ever one blueprint file now.
 
 ## Dispatching
 
@@ -60,7 +57,7 @@ Produce exactly this structure, in Traditional Chinese, current-state-only (igno
 
 4. **通用／可重用模組小節**（如果 scope 內有，例如 audit）：說明它的 contract 設計（entityType/snapshot/validate/apply 之類），強調它對其他 entity 一無所知。同樣以一段說明為主，不需要表格。
 
-5. **End-to-End 情境走查**：從 scope 內各 spec 的 Acceptance Criteria 挑 3–6 個具代表性的完整情境，各自寫成短的 numbered steps（例如「建立 Global Definition」「把某品牌 pair 改成 MANUAL」「刪除 Definition 前的 guard」）。
+5. **End-to-End 情境走查**：只挑會跨越兩個以上 entity、或揭露非顯而易見規則的情境（例如「建立 Global Definition 後 fan-out 到每個品牌」「刪除 Definition 前必須先確認沒有品牌還在使用」「送審後被駁回」）——這些才是讀者看了架構圖後還想知道「實際流程長怎樣」的地方。**不要**把一般 REST CRUD 的例行步驟寫成情境（例如「新增時驗證必填欄位」「查詢不存在的 id 回 404」「更新時忽略不可變欄位」）——這些屬於 `docs/backend/<slug>.md` 的 Acceptance Criteria，本文件寫出來只是重複、沒有提供架構層級的新資訊。若某個 entity/spec 純粹是單一資料表的標準 CRUD、沒有任何跨 entity 效應或非顯而易見規則（例如一個獨立維護的主檔，新增/查詢/修改/刪除都各自獨立生效），這節可以完全不提到它——省略比硬湊瑣碎步驟更誠實。若整個 scope 裡沒有任何情境符合這個門檻，整節可以只寫一句話說明「目前系統內都是各自獨立的標準 CRUD，沒有跨 entity 情境」，不必硬掰 3–6 個。
 
 6. **延伸閱讀**：表格，每個 §3 章節對應回哪個 backend 詳細文件（Chapter / `docs/backend/<slug>.md`），方便讀者從大方向跳去看細節定義。
 
@@ -76,16 +73,16 @@ Return the assembled markdown body (with [[DIAGRAM:n]] placeholders inline) foll
 
 For each `<diagram id="n">` block in the response:
 
-1. Write its Mermaid source to a scratch file, e.g. `/tmp/blueprint-render/<slug>-<n>.mmd`.
+1. Write its Mermaid source to a scratch file, e.g. `/tmp/blueprint-render/backend-<n>.mmd`.
 2. Prepend a dark-theme init directive so blueprint diagrams read as one visual family:
    ```
    %%{init: {'theme':'dark'}}%%
    ```
    (only if the returned source doesn't already start with an `%%{init...}%%` line).
-3. Render with Mermaid CLI via npx, into the slug's own image folder (create it first if it doesn't exist):
+3. Render with Mermaid CLI via npx, into the image folder (create it first if it doesn't exist):
    ```
-   mkdir -p docs/blueprint/<slug>
-   npx --yes -p @mermaid-js/mermaid-cli mmdc -i <scratch>.mmd -o docs/blueprint/<slug>/<n>.png -b '#0d1117' -w 1400 --scale 2
+   mkdir -p docs/blueprint/backend
+   npx --yes -p @mermaid-js/mermaid-cli mmdc -i <scratch>.mmd -o docs/blueprint/backend/<n>.png -b '#0d1117' -w 1400 --scale 2
    ```
 4. If `mmdc` reports a parse error, fix the offending Mermaid line (don't drop the diagram, don't fall back to a text fence) and re-render.
 5. Read the rendered PNG back to sanity-check it before referencing it (not clipped, layout not broken).
@@ -109,8 +106,8 @@ This is a **crop, not a redraw** — mechanically derived by you (the command ru
 1. For each entity node that gets its own §3 chapter, collect every edge in Diagram 1 where that node is either end (source or target), plus the node itself and every neighbor those edges touch.
 2. Write a new **`flowchart LR`** (horizontal, not `TB`) containing exactly those nodes and edges — copy each node's label text and each edge's label/arrow-style (`-->`, `-.->`) **character-for-character** from Diagram 1. Do not rephrase, re-color, or re-derive anything; this must visually read as "the same nodes as the big picture," not a new illustration. **Always prefer horizontal over vertical for these excerpts** — confirmed by the user as a standing habit for this command, not a one-off fix: "能橫向就不要往下" (if it can go sideways, don't let it go downward). A short chain (e.g. 3 nodes in a line) rendered `TB` stacks into a tall column that still looks oversized even at a fixed embed width, because the width shrinks but the height doesn't; the same chain rendered `LR` becomes a short wide strip that reads as an actual thumbnail once constrained to `width="320"` in step 5. This applies regardless of how the corresponding subgraph happened to be oriented in Diagram 1 itself.
 3. Copy over only the `classDef` lines whose class is actually used by the included nodes (no need to carry unused color definitions), and the matching `class` assignments.
-4. Render it with the exact same `mmdc` parameters as Diagram 1 and every other diagram in the document (`-w 1400 --scale 2 -b '#0d1117'`, per "Rendering" above) — same scale, not smaller and not larger. Confirmed by the user: a node in the excerpt must look identical in size to that same node inside the full architecture diagram, since this is a crop, not a rescaled thumbnail. Do not special-case the scale for excerpts — the smaller final image size (fewer KB, smaller canvas) comes naturally from having fewer nodes in the crop, not from lowering the render scale. Name it `docs/blueprint/<slug>/1-<entity-slug>.png` (e.g. `docs/blueprint/backend/1-currency-pair.png`) — same image folder as every other diagram in this document; the `1-` prefix marks it as derived from Diagram 1, not a new diagram number in the main sequence.
-5. Embed it with an HTML `<img>` tag, not Markdown `![]()` syntax: `<img src="<slug>/1-<entity-slug>.png" width="320" alt="...">`. This is required, not stylistic — plain `![]()` has no size attribute, so most Markdown viewers stretch the image to fill the column width regardless of its native pixel size, which silently defeats step 4's "same scale as Diagram 1" and makes the excerpt look full-size again (confirmed by the user seeing exactly this after the first `![]()` attempt). The fixed `width="320"` is what actually keeps it thumbnail-sized on screen; the render scale from step 4 is what keeps its *contents* crisp and proportionate at that size.
+4. Render it with the exact same `mmdc` parameters as Diagram 1 and every other diagram in the document (`-w 1400 --scale 2 -b '#0d1117'`, per "Rendering" above) — same scale, not smaller and not larger. Confirmed by the user: a node in the excerpt must look identical in size to that same node inside the full architecture diagram, since this is a crop, not a rescaled thumbnail. Do not special-case the scale for excerpts — the smaller final image size (fewer KB, smaller canvas) comes naturally from having fewer nodes in the crop, not from lowering the render scale. Name it `docs/blueprint/backend/1-<entity-slug>.png` (e.g. `docs/blueprint/backend/1-currency-pair.png`) — same image folder as every other diagram in this document; the `1-` prefix marks it as derived from Diagram 1, not a new diagram number in the main sequence.
+5. Embed it with an HTML `<img>` tag, not Markdown `![]()` syntax: `<img src="backend/1-<entity-slug>.png" width="320" alt="...">`. This is required, not stylistic — plain `![]()` has no size attribute, so most Markdown viewers stretch the image to fill the column width regardless of its native pixel size, which silently defeats step 4's "same scale as Diagram 1" and makes the excerpt look full-size again (confirmed by the user seeing exactly this after the first `![]()` attempt). The fixed `width="320"` is what actually keeps it thumbnail-sized on screen; the render scale from step 4 is what keeps its *contents* crisp and proportionate at that size.
 6. Place it as the very first line of the chapter's body, right after the `### 3.x 標題` heading and before the `**說明**` sentence and Field table. A one-line italic caption immediately below it (on its own line, with a blank line separating it from the `<img>` tag so Markdown still parses it as italic), `*（節錄自完整架構圖）*`, tells the reader this is an excerpt, not a new diagram.
 
 A chapter's own detailed flow diagram (fan-out logic, the cross-layer audit handoff, etc.) still appears later in that chapter, after the Field table/Constraints, exactly as before — the excerpt is an addition at the top, never a replacement for it. Do this for every §3 chapter, even supporting/master-data ones whose excerpt is small (e.g. Brand's excerpt is just itself + the two nodes it feeds) — the anchor is the point, not the size.
@@ -134,12 +131,12 @@ Reuse this exact `classDef`/style block verbatim across every cross-layer-handof
 ### Assembly
 
 Take the agent's returned markdown body verbatim except:
-- Replace each `[[DIAGRAM:n]]` token with `![Diagram n](<slug>/n.png)`.
+- Replace each `[[DIAGRAM:n]]` token with `![Diagram n](backend/n.png)`.
 - Immediately after each `### 3.x` chapter heading, insert that entity's excerpt image + italic caption from "Local Excerpt Diagrams" above, before the heading's existing first line.
 
 Do not include any `<diagram>` tag or Mermaid source in the final `.md`.
 
-Write the result to `docs/blueprint/<slug>.md`.
+Write the result to `docs/blueprint/backend.md`.
 
 ## Index
 
@@ -147,7 +144,7 @@ Add/update in `docs/README.md`:
 
 ```markdown
 ## Blueprints (integrated architecture specs)
-- [<slug>](blueprint/<slug>.md) — <one-line: which specs are stacked>. Big-picture/diagram-led — see the linked `docs/backend/<slug>.md` files for field/constraint/API detail.
+- [backend](blueprint/backend.md) — <one-line: which specs are stacked>. Big-picture/diagram-led — see the linked `docs/backend/<slug>.md` files for field/constraint/API detail.
 ```
 
 ## Output
@@ -155,9 +152,9 @@ Add/update in `docs/README.md`:
 After the document is written, print:
 
 ```
-| Blueprint              | Specs integrated                                            | Diagrams |
-|------------------------|--------------------------------------------------------------|----------|
-| docs/blueprint/<slug>.md | brand, currency, currency-pair, ...                         | N        |
+| Blueprint                 | Specs integrated                                            | Diagrams |
+|----------------------------|--------------------------------------------------------------|----------|
+| docs/blueprint/backend.md | brand, currency, currency-pair, ...                         | N        |
 ```
 
 Do NOT ask for confirmation at any step. Generate immediately.

@@ -115,9 +115,9 @@ The three domain specs describe one feature from three angles — they must agre
 For each domain with at least one spec file created/edited this run, follow the referenced command's own file **exactly as written there** (its own Argument Handling, Process, Dispatching, Rendering, Index, Output) — this section only decides *whether* to trigger it and *what scope to pass*, never how it works internally, so behavior stays identical to running that command by hand:
 
 - **Frontend spec(s) changed** → for each affected group under `/doc-fronend`'s Grouping Rule (`.claude/commands/doc-fronend.md`), run its Process with that group slug as scope. Two changed specs landing in the same group only trigger that group once.
-- **Backend spec(s) changed** → two things, both scoped from the changed slug(s):
+- **Backend spec(s) changed** → two things:
   1. Run `/doc-backend`'s Process (`.claude/commands/doc-backend.md`) with scope = the changed slug(s) — one output file per changed spec.
-  2. Run `/doc-blue-print`'s Process (`.claude/commands/doc-blue-print.md`) once per changed slug's connected component in the `depends_on` graph — it resolves the full component itself, so pass one changed slug per component and skip any other changed slug that resolves to the same component (avoid re-rendering the same blueprint twice in one run).
+  2. Run `/doc-blue-print`'s Process (`.claude/commands/doc-blue-print.md`) once — it always regenerates the single unified `docs/blueprint/backend.md` covering every non-`skip` backend spec (not just the changed ones), so there is nothing to scope here; just trigger it once per `/spec` run where at least one backend spec changed.
 - **DBA spec(s) changed** → run `/doc-db`'s Process (`.claude/commands/doc-db.md`). It always regenerates the whole ER model regardless of scope — that's fine, only the *trigger* (at least one `specs/dba/*.md` changed this run) is scoped, not its own internal behavior.
 
 If a run touches zero domains for a given category, skip that category's docs entirely — don't touch its existing files.
@@ -136,7 +136,7 @@ Then, if any doc generation ran (per "Doc Generation" above), append a second ta
 
 | Artifact  | Command       | File(s)                              |
 |-----------|---------------|---------------------------------------|
-| Blueprint | /doc-blue-print | docs/blueprint/<slug>.md            |
+| Blueprint | /doc-blue-print | docs/blueprint/backend.md            |
 | Frontend  | /doc-fronend    | docs/frontend/<group>.md             |
 | Backend   | /doc-backend    | docs/backend/<slug>.md               |
 | DB        | /doc-db         | docs/db/er-model.md                  |
